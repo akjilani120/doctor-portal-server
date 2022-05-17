@@ -13,6 +13,7 @@ const uri =`mongodb+srv://doctor-portal:ISsdPmGjJWdAUwd1@cluster0.8uxou.mongodb.
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
  const doctorCollection = client.db("doctor-portal").collection("service");
  const bookingCollection = client.db("doctor-portal").collection("bookings");
+ const userCollection = client.db("doctor-portal").collection("user");
 async function  run (){
   try{
    
@@ -61,9 +62,19 @@ async function  run (){
      service.available = available
     }) 
       res.send(services)
-      // res.send(booking)
+      
     })
-    
+    app.put('/user/:email' , async (req , res) =>{
+      const email = req.params.email;
+      const filter={email}
+      const options = { upsert: true };
+      const user = req.body;
+      const updateDoc = {
+        $set: user
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options)
+      res.send(result)
+    })
   }finally{
 
   }
