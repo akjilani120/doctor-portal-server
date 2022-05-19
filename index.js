@@ -18,7 +18,7 @@ function varifyJWT (req, res, next){
     return res.status(401).send({message:"Unauthorization access"})
   }
   const token = authorizationHead.split(" ")[1]
-  console.log(token , "access token",process.env.ACCESS_TOKEN_SECRET )
+ 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if(err){
       return res.status(403).send({message:"Forbidden access"} )
@@ -32,11 +32,12 @@ function varifyJWT (req, res, next){
 } 
  
 async function  run (){
-  console.log("data base connect")
+ 
   try{
     const doctorCollection = client.db("doctor-portal").collection("service");
     const bookingCollection = client.db("doctor-portal").collection("bookings");
     const userCollection = client.db("doctor-portal").collection("user");
+    const userAdminCollection = client.db("doctor-portal").collection("admin");
     await client.connect();
     app.get('/service', async (req, res) =>{
       const query ={}
@@ -55,22 +56,12 @@ async function  run (){
        return res.send({sucess:true , result})
     })
 
-    // app.get('/booking',   async(req ,res) =>{
     
-    //   const query=req.query.patient
-     
-    //  const booking = await bookingCollection.find(query).toArray() 
-    //  res.send(booking)
-        
-    
-      
-    // })
     app.get('/booking', varifyJWT,  async(req ,res) =>{
        const patient = req.query.patient
       const query={patient}
-      const decordedEmail= req.decoded.email
-      // console.log(patient)
-      console.log("decoded email", decordedEmail,"patient", patient)         
+      const decordedEmail= req.decoded.email    
+               
      
       if(patient === decordedEmail){
         const booking = await bookingCollection.find(query).toArray() 
@@ -100,19 +91,38 @@ async function  run (){
       res.send(services)
       
     })
+    app.get('/users', varifyJWT, async(req , res) =>{
+      const users = await  userCollection.find().toArray()
+      res.send(users)
+    })
     app.put('/user/:email' , async (req , res) =>{
-      const email = req.params.email;
-     
+      const email = req.params.email;     
       const filter={email}
       const options = { upsert: true };
-      const user = req.body;
-     
+      const user = req.body;     
       const updateDoc = {
         $set: user
       };
       const result = await userCollection.updateOne(filter, updateDoc, options)     
       const token = jwt.sign({email}, `${process.env.ACCESS_TOKEN_SECRET}`, );     
       res.send({result , token})
+    })
+    app.put('/user/admin/:email',  varifyJWT , async (req , res) =>{
+      const email = req.params.email;     
+      const filter={email}      
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({email: requester})
+      if(requesterAccount.role === "admin"){
+        const updateDoc = {
+          $set: { role :  'admin' } ,
+        };
+        const result = await userCollection.updateOne(filter, updateDoc)     
+          
+        res.send(result )
+      }else{
+        res.status(403).send({message:" forbidden admin access"})
+      }
+     
     })
   }finally{
 
