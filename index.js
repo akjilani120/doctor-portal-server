@@ -142,6 +142,12 @@ async function  run (){
       const isAdmin = user.role ==="admin";
       res.send({admin : isAdmin})
     })
+    app.get('/doctor', varifyJWT,  async(req , res) =>{
+      const result = await doctorsDataCollection.find().toArray()
+      res.send(result)
+    })
+
+   
     app.post('/doctor',varifyJWT,   async(req , res) =>{
       const doctor = req.body;
       const result = await doctorsDataCollection.insertOne(doctor)
