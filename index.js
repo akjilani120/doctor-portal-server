@@ -34,14 +34,26 @@ function varifyJWT (req, res, next){
 async function  run (){
  
   try{
+    await client.connect();
     const doctorCollection = client.db("doctor-portal").collection("service");
     const bookingCollection = client.db("doctor-portal").collection("bookings");
     const userCollection = client.db("doctor-portal").collection("user");
-    const userAdminCollection = client.db("doctor-portal").collection("admin");
-    await client.connect();
+    const doctorsDataCollection = client.db("doctor-portal").collection("doctor");
+    
+    // varify Admin function
+    const varifyAdmin = async (res , req , next) =>{
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({email: requester})
+      if(requesterAccount.role === "admin"){
+        next()
+      } else{
+        return res.status(403).send({message:"Forbidden Access"})
+      }     
+    }
+    
     app.get('/service', async (req, res) =>{
       const query ={}
-      const cursor = doctorCollection.find(query)
+      const cursor = doctorCollection.find(query).project({name:1})
       const result = await cursor.toArray()
       res.send(result)
     })
@@ -129,6 +141,11 @@ async function  run (){
       const user  = await userCollection.findOne({email: email})
       const isAdmin = user.role ==="admin";
       res.send({admin : isAdmin})
+    })
+    app.post('/doctor',varifyJWT,   async(req , res) =>{
+      const doctor = req.body;
+      const result = await doctorsDataCollection.insertOne(doctor)
+      res.send(result)
     })
   }finally{
 
