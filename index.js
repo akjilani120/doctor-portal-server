@@ -153,6 +153,12 @@ async function  run (){
       const result = await doctorsDataCollection.insertOne(doctor)
       res.send(result)
     })
+    app.delete('/doctor/:email',varifyJWT,   async(req , res) =>{
+      const email = req.params.email;
+      const filter = {email}
+      const result = await doctorsDataCollection.deleteOne(filter)
+      res.send(result)
+    })
   }finally{
 
   }
