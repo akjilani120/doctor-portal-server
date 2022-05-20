@@ -3,7 +3,7 @@ const app = express()
 const cors = require('cors');
 const port =process.env.PORT || 5000
 require('dotenv').config() 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 app.use(cors())
 app.use(express.json())
@@ -84,7 +84,17 @@ async function  run (){
     
       
     })
+    // id collection
+    app.get('/booking/:id', varifyJWT, async(req , res) =>{
+      const id = req.params.id;
+      const query ={_id : ObjectId(id) }
+      const result = await bookingCollection.findOne(query)
+      res.send(result)
+      
+    })
+     
 
+    
     app.get("/available", async(req, res) =>{
     //  Step: 1
       const date = req.query.date; 
